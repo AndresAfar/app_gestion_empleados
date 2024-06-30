@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { createEmpleado } from '../api/empleadoService';
+import React, { useState, useEffect } from 'react';
+import { createEmpleado, updateEmpleado } from '../api/empleadoService';
 import { useNavigate } from 'react-router-dom';
 
-const EmpleadoForm = () => {
+const EmpleadoForm = ({ initialData = {}, isEdit = false, onSubmit }) => {
   const navigate = useNavigate();
   const [empleado, setEmpleado] = useState({
     nombre: '',
@@ -12,6 +12,12 @@ const EmpleadoForm = () => {
     salario: ''
   });
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isEdit && initialData) {
+      setEmpleado(initialData);
+    }
+  }, [initialData, isEdit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,18 +30,24 @@ const EmpleadoForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createEmpleado(empleado);
-      alert('Empleado añadido con éxito');
-      navigate('/'); // Redirige a la lista de empleados después de añadir
+      if (isEdit) {
+        await updateEmpleado(empleado._id, empleado);
+        alert('Empleado actualizado con éxito');
+      } else {
+        await createEmpleado(empleado);
+        alert('Empleado añadido con éxito');
+      }
+      onSubmit(); // Ejecuta la función de callback después de la operación
+      navigate('/'); // Redirige a la lista de empleados después de añadir o editar
     } catch (err) {
-      setError('Error al añadir el empleado. Por favor, intenta de nuevo.');
-      console.error('Error al crear empleado:', err);
+      setError(`Error al ${isEdit ? 'actualizar' : 'añadir'} el empleado. Por favor, intenta de nuevo.`);
+      console.error(`Error al ${isEdit ? 'actualizar' : 'crear'} empleado:`, err);
     }
   };
 
   return (
     <div>
-      <h2>Añadir Nuevo Empleado</h2>
+      <h2>{isEdit ? 'Editar Empleado' : 'Añadir Nuevo Empleado'}</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>
@@ -93,7 +105,7 @@ const EmpleadoForm = () => {
             required
           />
         </div>
-        <button type="submit">Añadir Empleado</button>
+        <button type="submit">{isEdit ? 'Actualizar Empleado' : 'Añadir Empleado'}</button>
       </form>
     </div>
   );
